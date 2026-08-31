@@ -1,6 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>ChatterBox</title>
 
   <!-- Firebase -->
@@ -18,159 +21,332 @@
       appId: "1:703998786296:web:99cabe960b1b00dd1d990d",
       measurementId: "G-MEVR8MCS49"
     };
+
     firebase.initializeApp(firebaseConfig);
   </script>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial;
       margin: 0;
       padding: 0;
       height: 100vh;
+      overflow: hidden;
+
+      font-family: Arial, Helvetica, sans-serif;
+
+      background: #f5f7fa;
+      color: #111;
+
       display: flex;
-      flex-direction: row;
     }
 
-    /* SIDEBAR */
+    /* =========================================
+       SIDEBAR
+    ========================================= */
+
     #sidebar {
-      width: 250px;
-      background: #333;
+      width: 270px;
+      height: 100vh;
+
+      background: #292929;
       color: white;
+
       padding: 20px;
-      box-sizing: border-box;
+
       display: flex;
       flex-direction: column;
+
       position: fixed;
       left: 0;
       top: 0;
       bottom: 0;
+
+      z-index: 100;
     }
 
-    #sidebar h2 {
-      margin: 0;
-      font-size: 32px;
-      margin-bottom: 10px;
+    #sidebarTitle {
+      font-size: 30px;
+      font-weight: bold;
+
+      margin: 0 0 18px 0;
     }
 
-    /* TOP SECTION */
+    /* =========================================
+       ADD FRIEND
+    ========================================= */
+
     #addFriendBox {
-      margin-top: 10px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+
       flex-shrink: 0;
     }
 
     #friendSearchInput {
-      padding: 10px;
-      font-size: 20px;
-      border-radius: 6px;
       width: 100%;
-      box-sizing: border-box;
+
+      padding: 12px;
+
+      font-size: 18px;
+
+      border: none;
+      border-radius: 8px;
+
+      outline: none;
     }
 
-    /* MIDDLE SECTION (equal height) */
-    #middleSections {
-      flex: 1; /* THIS is the fix */
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      margin-top: 20px;
-      overflow: hidden; /* prevents overflow pushing bottom buttons */
+    #friendSearchInput:focus {
+      box-shadow: 0 0 0 2px #4da6ff;
     }
 
-    .section {
-      flex: 1; /* equal height */
+    #addFriendButton {
+      width: 100%;
+
+      padding: 11px;
+
+      border: none;
+      border-radius: 8px;
+
+      background: #4da6ff;
+      color: white;
+
+      font-size: 19px;
+      font-weight: bold;
+
+      cursor: pointer;
+
+      transition: 0.15s;
+    }
+
+    #addFriendButton:hover {
+      background: #3399ff;
+      transform: translateY(-1px);
+    }
+
+    /* =========================================
+       FRIENDS
+    ========================================= */
+
+    #friendsSection {
+      flex: 1;
+
+      min-height: 0;
+
       display: flex;
       flex-direction: column;
-      min-height: 0; /* REQUIRED for proper flex scrolling */
+
+      margin-top: 25px;
     }
 
     .sectionHeader {
-      font-size: 22px;
+      font-size: 21px;
       font-weight: bold;
-      margin-bottom: 6px;
+
+      margin-bottom: 7px;
     }
 
     .sectionDivider {
       height: 1px;
-      background: #777;
-      margin-bottom: 10px;
+      width: 100%;
+
+      background: #666;
+
+      margin-bottom: 12px;
     }
 
-    .sectionContent {
+    #friendsList {
       flex: 1;
+
+      min-height: 0;
+
       overflow-y: auto;
+
       display: flex;
       flex-direction: column;
-      gap: 10px;
+
+      gap: 8px;
+
       padding-right: 4px;
-      min-height: 0; /* REQUIRED for scroll */
     }
 
-    /* CHAT & FRIEND ITEMS */
-    .friendItem,
-    .chatItem {
-      background: #444;
-      padding: 10px;
-      border-radius: 6px;
+    #friendsList::-webkit-scrollbar {
+      width: 7px;
+    }
+
+    #friendsList::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #friendsList::-webkit-scrollbar-thumb {
+      background: #666;
+      border-radius: 10px;
+    }
+
+    .friendItem {
+      width: 100%;
+
+      padding: 12px;
+
+      background: #3b3b3b;
+
+      border-radius: 8px;
+
       cursor: pointer;
-      font-size: 20px;
+
+      font-size: 19px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      transition:
+        background 0.15s,
+        transform 0.15s;
     }
 
-    .friendItem:hover,
-    .chatItem:hover {
-      background: #555;
+    .friendItem:hover {
+      background: #4a4a4a;
+      transform: translateX(2px);
     }
 
-    .activeChat {
-      background: #777 !important;
+    /* Currently selected friend */
+
+    .activeFriend {
+      background: #4da6ff !important;
       color: white;
+
+      font-weight: bold;
+
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     }
 
-    /* BOTTOM BUTTONS */
+    .activeFriend:hover {
+      background: #3399ff !important;
+    }
+
+    /* Unread dot */
+
+    .unreadDot {
+      width: 10px;
+      height: 10px;
+
+      border-radius: 50%;
+
+      background: #ff3b30;
+
+      flex-shrink: 0;
+
+      margin-left: 8px;
+
+      box-shadow: 0 0 5px rgba(255, 59, 48, 0.7);
+    }
+
+    /* =========================================
+       SIDEBAR BOTTOM
+    ========================================= */
+
     #bottomButtons {
-      margin-top: auto;
+      margin-top: 15px;
+
       display: flex;
       flex-direction: column;
-      gap: 10px;
+
+      gap: 9px;
+
       flex-shrink: 0;
     }
 
-    #sidebar button {
-      padding: 12px;
-      font-size: 22px;
+    .sidebarButton {
+      width: 100%;
+
+      padding: 11px;
+
       border: none;
       border-radius: 8px;
+
       background: #4da6ff;
       color: white;
+
+      font-size: 18px;
+      font-weight: bold;
+
       cursor: pointer;
+
+      transition: 0.15s;
     }
 
-    #sidebar button:hover {
+    .sidebarButton:hover {
       background: #3399ff;
     }
 
-    /* POPUP */
+    #logoutButton {
+      background: #555;
+    }
+
+    #logoutButton:hover {
+      background: #666;
+    }
+
+    #clearButton {
+      background: #444;
+    }
+
+    #clearButton:hover {
+      background: #555;
+    }
+
+    /* =========================================
+       FRIEND OPTIONS POPUP
+    ========================================= */
+
     #popupBox {
-      position: absolute;
+      position: fixed;
+
+      width: 200px;
+
+      padding: 15px;
+
       background: #222;
       color: white;
-      padding: 15px;
+
       border-radius: 10px;
+
       display: none;
       flex-direction: column;
-      gap: 10px;
-      width: 180px;
-      z-index: 999;
+
+      gap: 9px;
+
+      z-index: 9999;
+
+      box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    #popupFriendName {
+      font-size: 20px;
+      font-weight: bold;
+
+      padding-bottom: 4px;
     }
 
     #popupBox button {
-      font-size: 18px;
-      padding: 8px;
-      border-radius: 6px;
-      background: #4da6ff;
+      width: 100%;
+
+      padding: 9px;
+
       border: none;
+      border-radius: 7px;
+
+      background: #4da6ff;
+      color: white;
+
+      font-size: 17px;
+
       cursor: pointer;
     }
 
@@ -178,135 +354,403 @@
       background: #3399ff;
     }
 
-    /* CHAT AREA */
+    #popupDeleteFriendBtn {
+      background: #e53935 !important;
+    }
+
+    #popupDeleteFriendBtn:hover {
+      background: #c62828 !important;
+    }
+
+    /* =========================================
+       MAIN CHAT AREA
+    ========================================= */
+
     #chatArea {
-      margin-left: 250px;
+      margin-left: 270px;
+
+      width: calc(100% - 270px);
+
+      height: 100vh;
+
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      width: calc(100% - 250px);
+
+      background: #ffffff;
+    }
+
+    /* =========================================
+       HEADER
+    ========================================= */
+
+    #chatHeader {
+      flex-shrink: 0;
+
+      padding: 10px 20px 8px;
+
+      text-align: center;
+
+      border-bottom: 1px solid #ddd;
+
+      background: white;
     }
 
     #title {
-      font-size: 60px;
-      text-align: center;
-      margin: 10px 0;
+      margin: 0;
+
+      font-size: 48px;
+      font-weight: bold;
+
+      color: #222;
     }
+
+    #currentChatName {
+      min-height: 24px;
+
+      margin-top: 3px;
+
+      font-size: 18px;
+
+      color: #777;
+    }
+
+    /* =========================================
+       MESSAGES
+    ========================================= */
 
     #messages {
       flex: 1;
-      border: 1px solid #ccc;
-      overflow-y: scroll;
-      padding: 10px;
-      font-size: 30px;
+
+      min-height: 0;
+
+      overflow-y: auto;
+
+      padding: 20px;
+
       display: flex;
       flex-direction: column;
+
       gap: 10px;
+
+      background: #f5f7fa;
+    }
+
+    #messages::-webkit-scrollbar {
+      width: 9px;
+    }
+
+    #messages::-webkit-scrollbar-track {
+      background: #eee;
+    }
+
+    #messages::-webkit-scrollbar-thumb {
+      background: #bbb;
+      border-radius: 10px;
     }
 
     .bubble {
       max-width: 70%;
+
       padding: 10px 15px;
+
       border-radius: 15px;
+
       word-wrap: break-word;
-      display: inline-block;
+
+      font-size: 24px;
+
+      line-height: 1.25;
+
+      box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.08);
     }
 
     .me {
-      background-color: #4da6ff;
-      color: white;
       align-self: flex-end;
+
+      background: #4da6ff;
+      color: white;
+
+      border-bottom-right-radius: 4px;
     }
 
     .other {
-      background-color: #e6e6e6;
-      color: black;
       align-self: flex-start;
+
+      background: #e5e5e5;
+      color: #111;
+
+      border-bottom-left-radius: 4px;
     }
 
-    /* INPUT ROW */
+    .messageUsername {
+      font-size: 15px;
+
+      opacity: 0.7;
+
+      margin-bottom: 4px;
+
+      font-weight: bold;
+    }
+
+    /* =========================================
+       INPUT
+    ========================================= */
+
     #inputRow {
+      flex-shrink: 0;
+
       display: flex;
-      padding: 10px;
+
       gap: 10px;
-      align-items: center;
+
+      padding: 12px;
+
+      background: white;
+
+      border-top: 1px solid #ddd;
     }
 
     #input {
-      width: 100%;
-      padding: 14px 16px;
-      font-size: 30px;
+      flex: 1;
+
+      min-width: 0;
+
+      padding: 13px 15px;
+
+      font-size: 23px;
+
+      border: 1px solid #ccc;
+
       border-radius: 10px;
+
+      outline: none;
     }
 
-    #inputRow button {
-      padding: 14px 26px;
-      font-size: 30px;
+    #input:focus {
+      border-color: #4da6ff;
+
+      box-shadow:
+        0 0 0 2px rgba(77, 166, 255, 0.15);
+    }
+
+    #sendButton {
+      padding: 13px 25px;
+
+      border: none;
       border-radius: 10px;
+
+      background: #4da6ff;
+      color: white;
+
+      font-size: 23px;
+      font-weight: bold;
+
+      cursor: pointer;
+    }
+
+    #sendButton:hover {
+      background: #3399ff;
+    }
+
+    /* =========================================
+       MOBILE
+    ========================================= */
+
+    @media (max-width: 750px) {
+
+      #sidebar {
+        width: 210px;
+        padding: 14px;
+      }
+
+      #chatArea {
+        margin-left: 210px;
+        width: calc(100% - 210px);
+      }
+
+      #title {
+        font-size: 36px;
+      }
+
+      .friendItem {
+        font-size: 16px;
+        padding: 10px;
+      }
+
+      #input {
+        font-size: 18px;
+      }
+
+      #sendButton {
+        font-size: 18px;
+        padding: 10px 15px;
+      }
+
+      .bubble {
+        font-size: 19px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- POPUP BOX -->
+  <!-- =========================================
+       FRIEND POPUP
+  ========================================= -->
+
   <div id="popupBox">
-    <div id="popupFriendName" style="font-size:22px;"></div>
-    <button id="popupStartChatBtn">Start Chat</button>
-    <button id="popupDeleteFriendBtn">Delete Friend</button>
-    <button onclick="closePopup()">Close</button>
+
+    <div id="popupFriendName"></div>
+
+    <button id="popupOpenChatBtn">
+      Open Chat
+    </button>
+
+    <button id="popupDeleteFriendBtn">
+      Delete Friend
+    </button>
+
+    <button onclick="closePopup()">
+      Close
+    </button>
+
   </div>
 
-  <!-- SIDEBAR -->
-  <div id="sidebar">
-    <h2>Menu</h2>
 
-    <!-- TOP -->
+  <!-- =========================================
+       SIDEBAR
+  ========================================= -->
+
+  <aside id="sidebar">
+
+    <h2 id="sidebarTitle">
+      Menu
+    </h2>
+
+
+    <!-- ADD FRIEND -->
+
     <div id="addFriendBox">
-      <input id="friendSearchInput" placeholder="Search username">
-      <button onclick="addFriend(localStorage.getItem('username'), friendSearchInput.value.trim())">
+
+      <input
+        id="friendSearchInput"
+        type="text"
+        placeholder="Search username"
+        autocomplete="off"
+      >
+
+      <button
+        id="addFriendButton"
+        onclick="handleAddFriend()"
+      >
         Add Friend
       </button>
-    </div>
-
-    <!-- MIDDLE (equal height sections) -->
-    <div id="middleSections">
-
-      <div class="section">
-        <div class="sectionHeader">Chats</div>
-        <div class="sectionDivider"></div>
-        <div class="sectionContent" id="chatsList"></div>
-      </div>
-
-      <div class="section">
-        <div class="sectionHeader">Friends</div>
-        <div class="sectionDivider"></div>
-        <div class="sectionContent" id="friendsList"></div>
-      </div>
 
     </div>
 
-    <!-- BOTTOM -->
+
+    <!-- FRIENDS -->
+
+    <div id="friendsSection">
+
+      <div class="sectionHeader">
+        Friends
+      </div>
+
+      <div class="sectionDivider"></div>
+
+      <div id="friendsList"></div>
+
+    </div>
+
+
+    <!-- BOTTOM BUTTONS -->
+
     <div id="bottomButtons">
-      <button id="globalChatBtn" onclick="switchToGlobalChat()">Global Chat</button>
-      <button id="deleteChatSidebarBtn" onclick="deleteChat()" style="display:none;">Delete Chat</button>
-      <button onclick="logout()">Logout</button>
-      <button onclick="clearChat()">Clear Chat</button>
+
+      <button
+        id="globalChatBtn"
+        class="sidebarButton"
+        onclick="switchToGlobalChat()"
+      >
+        Global Chat
+      </button>
+
+      <button
+        id="clearButton"
+        class="sidebarButton"
+        onclick="clearChat()"
+      >
+        Clear Chat
+      </button>
+
+      <button
+        id="logoutButton"
+        class="sidebarButton"
+        onclick="logout()"
+      >
+        Logout
+      </button>
+
     </div>
-  </div>
-  
-  <!-- CHAT AREA -->
-  <div id="chatArea">
-    <h1 id="title">ChatterBox</h1>
+
+  </aside>
+
+
+  <!-- =========================================
+       CHAT
+  ========================================= -->
+
+  <main id="chatArea">
+
+    <header id="chatHeader">
+
+      <!-- THIS ALWAYS STAYS CHATTERBOX -->
+
+      <h1 id="title">
+        ChatterBox
+      </h1>
+
+      <!-- Shows who you're talking to -->
+
+      <div id="currentChatName">
+        Global Chat
+      </div>
+
+    </header>
+
+
+    <!-- MESSAGES -->
 
     <div id="messages"></div>
 
+
+    <!-- INPUT -->
+
     <div id="inputRow">
-      <input id="input" placeholder="Type a message">
-      <button onclick="sendMessage()">Send</button>
+
+      <input
+        id="input"
+        type="text"
+        placeholder="Type a message..."
+        autocomplete="off"
+      >
+
+      <button
+        id="sendButton"
+        onclick="sendMessage()"
+      >
+        Send
+      </button>
+
     </div>
-  </div>
+
+  </main>
+
 
   <script src="script.js"></script>
+
 </body>
 </html>
