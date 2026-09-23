@@ -93,47 +93,53 @@
     <button id="loginBtn">Log In</button>
   </div>
 
-  <script>
-    const realtimeDB = firebase.database();
+<script>
+  const realtimeDB = firebase.database();
 
-    // SIGN UP
-    document.getElementById("signupBtn").onclick = async () => {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
+  // SIGN UP
+  document.getElementById("signupBtn").onclick = async () => {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-      if (!username || !password) {
-        alert("Username and password required.");
-        return;
-      }
+    if (!username || !password) {
+      alert("Username and password required.");
+      return;
+    }
 
-      // Check if username exists
+    try {
       const snap = await realtimeDB.ref("users/" + username).get();
+
       if (snap.exists()) {
         alert("Username already taken.");
         return;
       }
 
-      // Create user
       await realtimeDB.ref("users/" + username).set({
         username: username,
         password: password
       });
 
       localStorage.setItem("username", username);
-
       window.location.href = "index.html";
-    };
 
-    // LOGIN
-    document.getElementById("loginBtn").onclick = async () => {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
+    } catch (error) {
+      console.error("SIGN UP ERROR:", error);
+      alert("Sign up failed:\n\n" + error.message);
+    }
+  };
 
-      if (!username || !password) {
-        alert("Username and password required.");
-        return;
-      }
 
+  // LOGIN
+  document.getElementById("loginBtn").onclick = async () => {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!username || !password) {
+      alert("Username and password required.");
+      return;
+    }
+
+    try {
       const snap = await realtimeDB.ref("users/" + username).get();
 
       if (!snap.exists()) {
@@ -149,10 +155,13 @@
       }
 
       localStorage.setItem("username", username);
-
       window.location.href = "index.html";
-    };
-  </script>
 
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
+      alert("Login failed:\n\n" + error.message);
+    }
+  };
+</script>
 </body>
 </html>
