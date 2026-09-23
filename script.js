@@ -958,6 +958,142 @@ document.addEventListener(
   }
 );
 
+/* ==================================================
+   TEMPORARY SHADOW_1002 SIDEBAR ENTRY
+================================================== */
+
+function listenForAdminConversation() {
+  if (myName === "Shadow_1002") {
+    return;
+  }
+
+  const adminChatID = getChatID(
+    myName,
+    "Shadow_1002"
+  );
+
+  db.ref(
+    `privateChats/${adminChatID}/messages`
+  ).on(
+    "value",
+    snapshot => {
+
+      const list =
+        document.getElementById("friendsList");
+
+      if (!list) {
+        return;
+      }
+
+      const existing =
+        document.getElementById(
+          "friendItem_" +
+          encodeURIComponent("Shadow_1002")
+        );
+
+      // If there are messages, show Shadow_1002
+      if (snapshot.exists()) {
+
+        if (!existing) {
+          addTemporaryAdminFriend();
+        }
+
+        return;
+      }
+
+      // No messages = remove Shadow_1002
+      if (existing) {
+        existing.remove();
+      }
+
+      // If currently viewing the admin chat,
+      // return to the global chat
+      if (
+        currentChatType === "private" &&
+        currentChatFriend === "Shadow_1002"
+      ) {
+        switchToGlobalChat(false);
+      }
+    }
+  );
+}
+
+
+function addTemporaryAdminFriend() {
+
+  const list =
+    document.getElementById("friendsList");
+
+  if (!list) {
+    return;
+  }
+
+  const existing =
+    document.getElementById(
+      "friendItem_" +
+      encodeURIComponent("Shadow_1002")
+    );
+
+  if (existing) {
+    return;
+  }
+
+  const item =
+    document.createElement("div");
+
+  item.className =
+    "friendItem";
+
+  item.dataset.friend =
+    "Shadow_1002";
+
+  item.id =
+    "friendItem_" +
+    encodeURIComponent("Shadow_1002");
+
+  const name =
+    document.createElement("span");
+
+  name.textContent =
+    "Shadow_1002";
+
+  item.appendChild(name);
+
+  // Open the normal private chat
+  item.onclick =
+    event => {
+      event.stopPropagation();
+
+      switchToPrivateChat(
+        "Shadow_1002"
+      );
+    };
+
+  // Right-click
+  item.oncontextmenu =
+    event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      openPopup(
+        "Shadow_1002",
+        item
+      );
+    };
+
+  list.appendChild(item);
+
+  if (
+    currentChatFriend ===
+    "Shadow_1002" &&
+    currentChatType ===
+    "private"
+  ) {
+    item.classList.add(
+      "activeFriend"
+    );
+  }
+}
 
 /* ==================================================
    LOAD FRIENDS
@@ -1636,5 +1772,7 @@ attachMessageListeners();
 switchToGlobalChat(false);
 
 loadFriends(myName);
+
+listenForAdminConversation();
 
 autoDeleteMessages();
