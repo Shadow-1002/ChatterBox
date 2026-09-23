@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatterBox Admin</title>
+
+  <!-- ChatterBox uses Firebase v8.10.1 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f5f7fa;
+      color: #222;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 270px;
+      height: 100vh;
+      background: #292929;
+      color: white;
+      padding: 22px 18px;
+      overflow-y: auto;
+    }
+
+    .brand {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 0 0 5px;
+    }
+
+    .subtitle {
+      color: #aaa;
+      font-size: 14px;
+      margin-bottom: 22px;
+    }
+
+    .admin-badge {
+      background: #4da6ff;
+      color: white;
+      padding: 8px 10px;
+      border-radius: 7px;
+      font-size: 13px;
+      margin-bottom: 15px;
+    }
+
+    .search {
+      width: 100%;
+      padding: 11px;
+      border: 0;
+      border-radius: 7px;
+      outline: none;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .user-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: white;
+      text-align: left;
+      padding: 11px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background .15s;
+    }
+
+    .user-item:hover {
+      background: #3a3a3a;
+    }
+
+    .user-item.active {
+      background: #4da6ff;
+    }
+
+    .user-name {
+      font-weight: bold;
+    }
+
+    .user-status {
+      font-size: 12px;
+      color: #bbb;
+      margin-top: 3px;
+    }
+
+    .user-item.active .user-status {
+      color: #eaf5ff;
+    }
+
+    .main {
+      margin-left: 270px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: white;
+      border-bottom: 1px solid #ddd;
+      padding: 15px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 68px;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 23px;
+    }
+
+    .topbar small {
+      color: #777;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .blue-btn,
+    .danger-btn,
+    .secondary-btn {
+      border: 0;
+      border-radius: 7px;
+      padding: 9px 13px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .blue-btn {
+      background: #4da6ff;
+      color: white;
+    }
+
+    .blue-btn:hover {
+      background: #3399ff;
+    }
+
+    .secondary-btn {
+      background: #e8edf2;
+      color: #222;
+    }
+
+    .secondary-btn:hover {
+      background: #dce2e8;
+    }
+
+    .danger-btn {
+      background: #e05252;
+      color: white;
+    }
+
+    .danger-btn:hover {
+      background: #cc3e3e;
+    }
+
+    .content {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+    }
+
+    .empty {
+      margin: auto;
+      text-align: center;
+      color: #777;
+      padding: 30px;
+    }
+
+    .chat-area {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      background: white;
+    }
+
+    .chat-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .chat-header strong {
+      font-size: 18px;
+    }
+
+    .chat-header span {
+      color: #777;
+      font-size: 13px;
+    }
+
+    .messages {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 18px;
+      background: #f5f7fa;
+    }
+
+    .message-row {
+      display: flex;
+      margin: 8px 0;
+    }
+
+    .message-row.admin {
+      justify-content: flex-end;
+    }
+
+    .bubble {
+      max-width: min(70%, 650px);
+      padding: 10px 13px;
+      border-radius: 12px;
+      background: #e5e7eb;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message-row.admin .bubble {
+      background: #4da6ff;
+      color: white;
+    }
+
+    .message-info {
+      font-size: 10px;
+      opacity: .7;
+      margin-top: 4px;
+    }
+
+    .composer {
+      border-top: 1px solid #ddd;
+      padding: 12px;
+      display: flex;
+      gap: 9px;
+      background: white;
+    }
+
+    .composer textarea {
+      flex: 1;
+      resize: none;
+      min-height: 44px;
+      max-height: 130px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 11px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .composer textarea:focus {
+      border-color: #4da6ff;
+    }
+
+    .send-btn {
+      align-self: flex-end;
+      border: 0;
+      border-radius: 7px;
+      padding: 11px 18px;
+      background: #4da6ff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .send-btn:hover {
+      background: #3399ff;
+    }
+
+    .stats {
+      padding: 12px 20px;
+      border-top: 1px solid #ddd;
+      background: white;
+      font-size: 13px;
+      color: #777;
+    }
+
+    .loading {
+      color: #aaa;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .error-box {
+      margin: 20px;
+      padding: 15px;
+      background: #fff0f0;
+      border: 1px solid #e8aaaa;
+      color: #a32929;
+      border-radius: 8px;
+      display: none;
+    }
+
+    @media (max-width: 750px) {
+      .sidebar {
+        width: 210px;
+      }
+
+      .main {
+        margin-left: 210px;
+      }
+
+      .brand {
+        font-size: 28px;
+      }
+
+      .bubble {
+        max-width: 85%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <aside class="sidebar">
+    <div class="brand">ChatterBox</div>
+    <div class="subtitle">Administration</div>
+
+    <div class="admin-badge">
+      Admin panel
+    </div>
+
+    <input id="userSearch" class="search" type="text" placeholder="Search users...">
+
+    <div id="userList" class="user-list">
+      <div class="loading">Loading users...</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1>Admin</h1>
+        <small id="accountCount">Loading accounts...</small>
+      </div>
+
+      <div class="top-actions">
+        <button class="secondary-btn" id="refreshBtn">Refresh</button>
+        <button class="danger-btn" id="logoutBtn">Log out</button>
+      </div>
+    </header>
+
+    <div id="errorBox" class="error-box"></div>
+
+    <section id="emptyState" class="empty">
+      <h2>Select a user</h2>
+      <p>You can open a private chat with any user without adding them as a friend.</p>
+    </section>
+
+    <section id="chatArea" class="chat-area" style="display:none;">
+      <div class="chat-header">
+        <div>
+          <strong id="chatTitle"></strong><br>
+          <span>Admin conversation</span>
+        </div>
+
+        <button id="deleteAccountBtn" class="danger-btn">
+          Delete account
+        </button>
+      </div>
+
+      <div id="messages" class="messages"></div>
+
+      <div class="composer">
+        <textarea id="messageInput" placeholder="Type a message..."></textarea>
+        <button id="sendBtn" class="send-btn">Send</button>
+      </div>
+
+      <div class="stats">
+        <span id="messageCount">0 messages</span>
+        <span> · </span>
+        <button id="deleteChatBtn" class="secondary-btn" style="padding:5px 9px;">
+          Delete chat messages
+        </button>
+      </div>
+    </section>
+  </main>
+
+<script>
+  /*
+    ============================================================
+    CHATTERBOX ADMIN CONFIG
+    ============================================================
+
+    Your existing ChatterBox project:
+      Firebase project: chat-ad084
+      Database: Realtime Database
+      Users: users/{username}
+      Private chats:
+        privateChats/{sortedUser1_sortedUser2}/messages/{pushId}
+
+    IMPORTANT:
+    This project currently stores ChatterBox accounts in the
+    Realtime Database rather than Firebase Authentication.
+
+    Set ADMIN_USERNAME to the username you use for your admin
+    account in ChatterBox.
+  */
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDbcH_OAGxFrfxPRarAnY4PUdAdz-rjymE",
+    authDomain: "chat-ad084.firebaseapp.com",
+    databaseURL: "https://chat-ad084-default-rtdb.firebaseio.com",
+    projectId: "chat-ad084"
+  };
+
+  const ADMIN_USERNAME = "admin";
+
+  /*
+    The chat key is deliberately made the same way as the normal
+    ChatterBox private-chat system: the two usernames are sorted
+    and joined with "_".
+  */
+  const ADMIN_CHAT_NAME = Shadow_1002;
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let allUsers = {};
+  let selectedUser = null;
+  let selectedChatRef = null;
+  let messageListener = null;
+
+  const userList = document.getElementById("userList");
+  const userSearch = document.getElementById("userSearch");
+  const accountCount = document.getElementById("accountCount");
+  const chatArea = document.getElementById("chatArea");
+  const emptyState = document.getElementById("emptyState");
+  const chatTitle = document.getElementById("chatTitle");
+  const messages = document.getElementById("messages");
+  const messageCount = document.getElementById("messageCount");
+  const messageInput = document.getElementById("messageInput");
+  const errorBox = document.getElementById("errorBox");
+
+  function showError(message) {
+    errorBox.textContent = message;
+    errorBox.style.display = "block";
+  }
+
+  function hideError() {
+    errorBox.style.display = "none";
+  }
+
+  function safeText(value) {
+    return value == null ? "" : String(value);
+  }
+
+  function makeChatId(a, b) {
+    return [a, b].sort().join("_");
+  }
+
+  function getCurrentUsername() {
+    return localStorage.getItem("username");
+  }
+
+  /*
+    This check is intentionally simple because the original
+    ChatterBox app uses localStorage username authentication.
+
+    For real security, Firebase Database Rules should also restrict
+    this page/data to a trusted admin account.
+  */
+  function checkAdmin() {
+    const username = getCurrentUsername();
+
+    if (!username) {
+      window.location.href = "auth.html";
+      return false;
+    }
+
+    if (username !== ADMIN_USERNAME) {
+      document.body.innerHTML = `
+        <div style="
+          height:100vh;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-family:Arial;
+          background:#f5f7fa;
+          color:#222;
+          text-align:center;
+          padding:30px;">
+          <div>
+            <h1>Access denied</h1>
+            <p>This page is only available to the ChatterBox administrator.</p>
+            <button onclick="location.href='auth.html'"
+              style="padding:10px 15px;border:0;border-radius:7px;background:#4da6ff;color:white;cursor:pointer;">
+              Back to login
+            </button>
+          </div>
+        </div>`;
+      return false;
+    }
+
+    return true;
+  }
+
+  function renderUsers() {
+    const search = userSearch.value.trim().toLowerCase();
+
+    userList.innerHTML = "";
+
+    const names = Object.keys(allUsers)
+      .filter(name => name.toLowerCase().includes(search))
+      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+    if (names.length === 0) {
+      userList.innerHTML = '<div class="loading">No users found.</div>';
+      return;
+    }
+
+    names.forEach(username => {
+      if (username === ADMIN_USERNAME) return;
+
+      const item = document.createElement("button");
+      item.className = "user-item" + (selectedUser === username ? " active" : "");
+
+      const name = document.createElement("div");
+      name.className = "user-name";
+      name.textContent = username;
+
+      const status = document.createElement("div");
+      status.className = "user-status";
+      status.textContent = "Open chat";
+
+      item.appendChild(name);
+      item.appendChild(status);
+
+      item.addEventListener("click", () => selectUser(username));
+      userList.appendChild(item);
+    });
+  }
+
+  async function loadUsers() {
+    hideError();
+
+    try {
+      const snapshot = await db.ref("users").once("value");
+      allUsers = snapshot.val() || {};
+
+      const total = Object.keys(allUsers).filter(u => u !== ADMIN_USERNAME).length;
+      accountCount.textContent = total + (total === 1 ? " user account" : " user accounts");
+
+      renderUsers();
+    } catch (error) {
+      console.error(error);
+      showError(
+        "Could not load the user list. Check your Firebase Realtime Database rules and Firebase configuration."
+      );
+      userList.innerHTML = '<div class="loading">Could not load users.</div>';
+    }
+  }
+
+  function selectUser(username) {
+    selectedUser = username;
+
+    emptyState.style.display = "none";
+    chatArea.style.display = "flex";
+
+    chatTitle.textContent = username;
+    messages.innerHTML = '<div class="loading">Loading messages...</div>';
+
+    renderUsers();
+    listenToChat();
+  }
+
+  function listenToChat() {
+    if (messageListener && selectedChatRef) {
+      selectedChatRef.off("value", messageListener);
+    }
+
+    const chatId = makeChatId(ADMIN_CHAT_NAME, selectedUser);
+    selectedChatRef = db.ref("privateChats/" + chatId + "/messages");
+
+    messageListener = snapshot => {
+      const data = snapshot.val() || {};
+      const entries = Object.entries(data).sort((a, b) => {
+        const ta = Number(a[1]?.createdAt || 0);
+        const tb = Number(b[1]?.createdAt || 0);
+        return ta - tb;
+      });
+
+      messages.innerHTML = "";
+      messageCount.textContent =
+        entries.length + (entries.length === 1 ? " message" : " messages");
+
+      if (entries.length === 0) {
+        messages.innerHTML = `
+          <div class="empty" style="padding:40px;">
+            <h3>No messages yet</h3>
+            <p>Send the first message to ${escapeHtml(selectedUser)}.</p>
+          </div>`;
+        return;
+      }
+
+      entries.forEach(([id, msg]) => {
+        const sender = safeText(
+          msg.sender || msg.username || msg.from || ""
+        );
+
+        const text = safeText(
+          msg.text ?? msg.message ?? msg.content ?? ""
+        );
+
+        const row = document.createElement("div");
+        row.className = "message-row" +
+          (sender === ADMIN_CHAT_NAME ? " admin" : "");
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.textContent = text;
+
+        if (msg.createdAt) {
+          const info = document.createElement("div");
+          info.className = "message-info";
+          info.textContent = new Date(Number(msg.createdAt)).toLocaleString();
+          bubble.appendChild(info);
+        }
+
+        row.appendChild(bubble);
+        messages.appendChild(row);
+      });
+
+      messages.scrollTop = messages.scrollHeight;
+    };
+
+    selectedChatRef.on("value", messageListener);
+  }
+
+  function escapeHtml(text) {
+    return safeText(text)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  async function sendMessage() {
+    if (!selectedUser) return;
+
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    const chatId = makeChatId(ADMIN_CHAT_NAME, selectedUser);
+    const ref = db.ref("privateChats/" + chatId + "/messages").push();
+
+    try {
+      await ref.set({
+        sender: ADMIN_CHAT_NAME,
+        receiver: selectedUser,
+        text: text,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      messageInput.value = "";
+      messageInput.focus();
+    } catch (error) {
+      console.error(error);
+      showError("The message could not be sent. Check your Firebase rules.");
+    }
+  }
+
+  /*
+    Deletes all messages in the admin <-> user chat.
+
+    Once this is empty, the chat effectively disappears because
+    the messages node is removed. If there are no other fields in
+    the chat, the whole chat node is removed as well.
+  */
+  async function deleteChatMessages() {
+    if (!selectedUser) return;
+
+    const username = selectedUser;
+
+    if (!confirm("Delete every message in the chat with " + username + "?")) {
+      return;
+    }
+
+    try {
+      const chatId = makeChatId(ADMIN_CHAT_NAME, username);
+      await db.ref("privateChats/" + chatId).remove();
+    } catch (error) {
+      console.error(error);
+      showError("Could not delete the chat.");
+    }
+  }
+
+  /*
+    Because the original ChatterBox uses /users/{username} as its
+    account store, deleting that node removes the ChatterBox account
+    data.
+
+    This also:
+      - removes the user's unread-chat data
+      - removes the user from other users' friend lists
+      - removes private chats involving the user
+
+    It does NOT delete a Firebase Authentication account because
+    the original ChatterBox setup does not use Firebase Auth.
+  */
+  async function deleteAccount() {
+    if (!selectedUser) return;
+
+    const username = selectedUser;
+
+    const firstConfirm = confirm(
+      "Delete the account '" + username + "'?\n\n" +
+      "This will remove the user's account data, friend references, " +
+      "unread data and private chats. This cannot be undone."
+    );
+
+    if (!firstConfirm) return;
+
+    const secondConfirm = confirm(
+      "FINAL WARNING\n\nDelete '" + username + "' permanently?"
+    );
+
+    if (!secondConfirm) return;
+
+    try {
+      // 1. Delete the main account.
+      await db.ref("users/" + username).remove();
+
+      // 2. Delete unread data belonging to the user.
+      await db.ref("unreadChats/" + username).remove();
+
+      // 3. Remove the user from everybody else's friends list.
+      const usersSnapshot = await db.ref("users").once("value");
+      const users = usersSnapshot.val() || {};
+      const updates = {};
+
+      Object.keys(users).forEach(otherUser => {
+        if (users[otherUser] && users[otherUser].friends) {
+          if (Object.prototype.hasOwnProperty.call(users[otherUser].friends, username)) {
+            updates["users/" + otherUser + "/friends/" + username] = null;
+          }
+        }
+      });
+
+      if (Object.keys(updates).length > 0) {
+        await db.ref().update(updates);
+      }
+
+      // 4. Remove every private chat whose ID contains this username.
+      const chatsSnapshot = await db.ref("privateChats").once("value");
+      const chats = chatsSnapshot.val() || {};
+      const chatDeletes = {};
+
+      Object.keys(chats).forEach(chatId => {
+        const parts = chatId.split("_");
+        if (parts.includes(username)) {
+          chatDeletes["privateChats/" + chatId] = null;
+        }
+      });
+
+      if (Object.keys(chatDeletes).length > 0) {
+        await db.ref().update(chatDeletes);
+      }
+
+      selectedUser = null;
+
+      if (messageListener && selectedChatRef) {
+        selectedChatRef.off("value", messageListener);
+      }
+
+      selectedChatRef = null;
+      messageListener = null;
+
+      chatArea.style.display = "none";
+      emptyState.style.display = "block";
+
+      await loadUsers();
+
+      alert("Account deleted.");
+    } catch (error) {
+      console.error(error);
+      showError(
+        "The account could not be completely deleted. Check your Firebase Realtime Database rules."
+      );
+    }
+  }
+
+  userSearch.addEventListener("input", renderUsers);
+
+  document.getElementById("refreshBtn").addEventListener("click", loadUsers);
+
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("username");
+    window.location.href = "auth.html";
+  });
+
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+
+  messageInput.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
+
+  document.getElementById("deleteChatBtn").addEventListener(
+    "click",
+    deleteChatMessages
+  );
+
+  document.getElementById("deleteAccountBtn").addEventListener(
+    "click",
+    deleteAccount
+  );
+
+  if (checkAdmin()) {
+    loadUsers();
+  }
+</script>
+</body>
+</html>
