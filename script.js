@@ -959,143 +959,6 @@ document.addEventListener(
 );
 
 /* ==================================================
-   TEMPORARY SHADOW_1002 SIDEBAR ENTRY
-================================================== */
-
-function listenForAdminConversation() {
-  if (myName === "Shadow_1002") {
-    return;
-  }
-
-  const adminChatID = getChatID(
-    myName,
-    "Shadow_1002"
-  );
-
-  db.ref(
-    `privateChats/${adminChatID}/messages`
-  ).on(
-    "value",
-    snapshot => {
-
-      const list =
-        document.getElementById("friendsList");
-
-      if (!list) {
-        return;
-      }
-
-      const existing =
-        document.getElementById(
-          "friendItem_" +
-          encodeURIComponent("Shadow_1002")
-        );
-
-      // If there are messages, show Shadow_1002
-      if (snapshot.exists()) {
-
-        if (!existing) {
-          addTemporaryAdminFriend();
-        }
-
-        return;
-      }
-
-      // No messages = remove Shadow_1002
-      if (existing) {
-        existing.remove();
-      }
-
-      // If currently viewing the admin chat,
-      // return to the global chat
-      if (
-        currentChatType === "private" &&
-        currentChatFriend === "Shadow_1002"
-      ) {
-        switchToGlobalChat(false);
-      }
-    }
-  );
-}
-
-
-function addTemporaryAdminFriend() {
-
-  const list =
-    document.getElementById("friendsList");
-
-  if (!list) {
-    return;
-  }
-
-  const existing =
-    document.getElementById(
-      "friendItem_" +
-      encodeURIComponent("Shadow_1002")
-    );
-
-  if (existing) {
-    return;
-  }
-
-  const item =
-    document.createElement("div");
-
-  item.className =
-    "friendItem";
-
-  item.dataset.friend =
-    "Shadow_1002";
-
-  item.id =
-    "friendItem_" +
-    encodeURIComponent("Shadow_1002");
-
-  const name =
-    document.createElement("span");
-
-  name.textContent =
-    "Shadow_1002";
-
-  item.appendChild(name);
-
-  // Open the normal private chat
-  item.onclick =
-    event => {
-      event.stopPropagation();
-
-      switchToPrivateChat(
-        "Shadow_1002"
-      );
-    };
-
-  // Right-click
-  item.oncontextmenu =
-    event => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      openPopup(
-        "Shadow_1002",
-        item
-      );
-    };
-
-  list.appendChild(item);
-
-  if (
-    currentChatFriend ===
-    "Shadow_1002" &&
-    currentChatType ===
-    "private"
-  ) {
-    item.classList.add(
-      "activeFriend"
-    );
-  }
-}
-
-/* ==================================================
    LOAD FRIENDS
 ================================================== */
 
@@ -1144,6 +1007,10 @@ function loadFriends(
           const unread =
             unreadSnapshot.val() || {};
 
+
+          /*
+            Load normal friends
+          */
 
           Object.keys(friends)
             .sort((a, b) =>
@@ -1295,6 +1162,218 @@ function loadFriends(
               }
             );
 
+
+          /*
+            ==========================================
+            TEMPORARY SHADOW_1002 ADMIN ENTRY
+            ==========================================
+
+            Shadow_1002 is NOT added to the
+            actual friends database.
+
+            It only appears if the private chat
+            currently contains at least one message.
+          */
+
+          if (
+            username !==
+            "Shadow_1002"
+          ) {
+
+            const adminChatID =
+              getChatID(
+                username,
+                "Shadow_1002"
+              );
+
+
+            const adminMessagesRef =
+              db.ref(
+                `privateChats/${adminChatID}/messages`
+              );
+
+
+            /*
+              Listen for changes to the
+              Shadow_1002 conversation.
+            */
+
+            adminMessagesRef.on(
+              "value",
+              adminSnapshot => {
+
+                const existing =
+                  document.getElementById(
+                    "friendItem_" +
+                    encodeURIComponent(
+                      "Shadow_1002"
+                    )
+                  );
+
+
+                /*
+                  =================================
+                  MESSAGES EXIST
+                  =================================
+                */
+
+                if (
+                  adminSnapshot.exists()
+                ) {
+
+                  /*
+                    Already visible,
+                    so do nothing.
+                  */
+
+                  if (existing) {
+                    return;
+                  }
+
+
+                  const item =
+                    document.createElement(
+                      "div"
+                    );
+
+
+                  item.className =
+                    "friendItem";
+
+
+                  item.dataset.friend =
+                    "Shadow_1002";
+
+
+                  item.id =
+                    "friendItem_" +
+                    encodeURIComponent(
+                      "Shadow_1002"
+                    );
+
+
+                  /*
+                    Shadow_1002 name
+                  */
+
+                  const name =
+                    document.createElement(
+                      "span"
+                    );
+
+
+                  name.textContent =
+                    "Shadow_1002";
+
+
+                  item.appendChild(
+                    name
+                  );
+
+
+                  /*
+                    Left click:
+                    Open normal private chat
+                  */
+
+                  item.onclick =
+                    event => {
+
+                      event.stopPropagation();
+
+                      switchToPrivateChat(
+                        "Shadow_1002"
+                      );
+
+                    };
+
+
+                  /*
+                    Right click:
+                    Keep normal popup behavior
+                  */
+
+                  item.oncontextmenu =
+                    event => {
+
+                      event.preventDefault();
+
+                      event.stopPropagation();
+
+                      openPopup(
+                        "Shadow_1002",
+                        item
+                      );
+
+                    };
+
+
+                  list.appendChild(
+                    item
+                  );
+
+
+                  /*
+                    Keep Shadow highlighted
+                    if currently viewing it.
+                  */
+
+                  if (
+                    currentChatFriend ===
+                    "Shadow_1002" &&
+                    currentChatType ===
+                    "private"
+                  ) {
+
+                    item.classList.add(
+                      "activeFriend"
+                    );
+
+                  }
+
+
+                  return;
+                }
+
+
+                /*
+                  =================================
+                  NO MESSAGES LEFT
+                  =================================
+
+                  Remove Shadow_1002 from the
+                  sidebar.
+                */
+
+                if (existing) {
+                  existing.remove();
+                }
+
+
+                /*
+                  If the user is currently
+                  viewing the Shadow chat,
+                  return to the global chat.
+                */
+
+                if (
+                  currentChatType ===
+                  "private" &&
+                  currentChatFriend ===
+                  "Shadow_1002"
+                ) {
+
+                  switchToGlobalChat(
+                    false
+                  );
+
+                }
+
+              }
+            );
+
+          }
+
         }
       );
 
@@ -1302,7 +1381,6 @@ function loadFriends(
   );
 
 }
-
 
 /* ==================================================
    PRIVATE CHAT NOTIFICATIONS
@@ -1772,7 +1850,5 @@ attachMessageListeners();
 switchToGlobalChat(false);
 
 loadFriends(myName);
-
-listenForAdminConversation();
 
 autoDeleteMessages();
